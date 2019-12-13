@@ -5,7 +5,7 @@ import traceback
 
 from .compat import StringIO, stringify, iteritems, numeric_types, time_ns
 from .constants import NUMERIC_TAGS, MANUAL_DROP_KEY, MANUAL_KEEP_KEY
-from .ext import errors, priority
+from .ext import SpanTypes, errors, priority
 from .internal.logger import get_logger
 
 
@@ -37,12 +37,6 @@ class Span(object):
         '_parent',
         '__weakref__',
     ]
-
-    __sizeof_ignore_attributes__ = (
-        '_context',
-        '__weakref__',
-        'tracer',
-    )
 
     def __init__(
         self,
@@ -80,7 +74,7 @@ class Span(object):
         self.name = name
         self.service = service
         self.resource = resource or name
-        self.span_type = span_type
+        self.span_type = span_type.value if isinstance(span_type, SpanTypes) else span_type
 
         # tags / metatdata
         self.meta = {}
@@ -165,7 +159,7 @@ class Span(object):
                 # DEV: `set_metric` will try to cast to `float()` for us
                 self.set_metric(key, value)
             except (TypeError, ValueError):
-                log.debug('error setting numeric metric {}:{}'.format(key, value))
+                log.debug('error setting numeric metric %s:%s', key, value)
 
             return
         elif key == MANUAL_KEEP_KEY:
